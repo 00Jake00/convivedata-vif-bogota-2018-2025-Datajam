@@ -50,8 +50,8 @@ El análisis se desarrolla a nivel territorial agregado por localidad y año, co
 │       └── spearman_por_anio.csv
 │
 ├── notebooks/
-│   ├── datajam_vif_01_limpieza_desde_github_DOCUMENTADO.ipynb
-│   └── datajam_vif_02_ejecucion_desde_github_DOCUMENTADO.ipynb
+│   ├── datajam_vif_01_limpieza_desde_github.ipynb
+│   └── datajam_vif_02_ejecucion_desde_github.ipynb
 │
 ├── scripts/
 │   └── pruebas_estadisticas_datos_puros_datajam.py
@@ -76,13 +76,13 @@ Los cuadernos están preparados para ejecutarse directamente en Google Colab. No
 
 ### 1. Limpieza de datos
 
-[![Abrir limpieza en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/00Jake00/convivedata-vif-bogota-2018-2025-Datajam/blob/main/notebooks/datajam_vif_01_limpieza_desde_github_DOCUMENTADO.ipynb)
+[![Abrir limpieza en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/00Jake00/convivedata-vif-bogota-2018-2025-Datajam/blob/main/notebooks/datajam_vif_01_limpieza_desde_github.ipynb)
 
 Este cuaderno descarga las fuentes desde GitHub, realiza la limpieza inicial, normaliza los nombres de localidades, filtra el periodo 2018-2025 y genera las bases limpias del proyecto.
 
 ### 2. Ejecución del análisis y pruebas estadísticas
 
-[![Abrir ejecución en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/00Jake00/convivedata-vif-bogota-2018-2025-Datajam/blob/main/notebooks/datajam_vif_02_ejecucion_desde_github_DOCUMENTADO.ipynb)
+[![Abrir ejecución en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/00Jake00/convivedata-vif-bogota-2018-2025-Datajam/blob/main/notebooks/datajam_vif_02_ejecucion_desde_github.ipynb)
 
 Este cuaderno construye las bases consolidadas, calcula indicadores territoriales, genera rankings, estima índices, ejecuta pruebas estadísticas exploratorias y exporta los productos finales del análisis.
 
@@ -177,7 +177,7 @@ El repositorio está organizado para permitir la revisión y ejecución del aná
 
 * Los datos fuente se encuentran en `data/raw/`.
 * Los datos procesados se encuentran en `data/processed/`.
-* Los cuadernos documentados están en `notebooks/`.
+* Los cuadernos reproducibles están en `notebooks/`.
 * El script principal está en `scripts/`.
 * La visualización está en `dashboard/` y publicada en Netlify.
 * Las salidas automáticas de limpieza y ejecución se conservan en `outputs_limpieza/`.
@@ -189,3 +189,4 @@ El repositorio está organizado para permitir la revisión y ejecución del aná
 Este proyecto permite identificar patrones territoriales y asociaciones estadísticas exploratorias entre violencia intrafamiliar, lesiones personales y consumo abusivo de SPA. Sus resultados pueden apoyar la priorización inicial de localidades y la formulación de preguntas para análisis institucional más detallado.
 
 El análisis no estima efectos causales ni reemplaza la lectura territorial de los equipos técnicos e institucionales.
+
