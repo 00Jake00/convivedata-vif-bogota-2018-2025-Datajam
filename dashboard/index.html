@@ -52,6 +52,28 @@ h1 {
   font-size: 17px;
   line-height: 1.45;
 }
+.title-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  flex-wrap: wrap;
+  max-width: 1240px;
+}
+.title-row h1 { flex: 1 1 640px; }
+.team-inline {
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.055);
+  box-shadow: 0 10px 28px rgba(0,0,0,.18);
+  max-width: 540px;
+}
+.team-inline .team-label { opacity: .72; margin-right: 6px; }
+.team-inline .team-members { color: var(--white); }
 .container { padding: 22px 34px 44px; }
 .grid { display: grid; gap: 18px; }
 .kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 22px; }
@@ -71,7 +93,23 @@ h1 {
 }
 .kpi-value { margin-top: 8px; font-size: 28px; font-weight: 900; }
 .kpi-note { color: var(--muted); margin-top: 6px; font-size: 13px; }
-.tabs { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 22px; }
+.tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  margin: 12px 0 22px;
+  overflow-x: auto;
+  padding: 8px 2px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: linear-gradient(180deg, rgba(8,16,24,.98), rgba(8,16,24,.86));
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  scrollbar-width: thin;
+}
+.tabs::-webkit-scrollbar { height: 8px; }
+.tabs::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 999px; }
 .tab {
   border: 1px solid var(--line);
   color: var(--text);
@@ -80,6 +118,8 @@ h1 {
   border-radius: 999px;
   cursor: pointer;
   font-weight: 800;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 .tab.active { background: var(--yellow); color: #171100; border-color: transparent; }
 .section { display: none; }
@@ -89,8 +129,40 @@ h1 {
 h2 { margin: 0 0 10px; font-size: 24px; }
 h3 { margin: 0 0 10px; font-size: 18px; }
 p { color: var(--muted); line-height: 1.5; }
-.chart-wrap { width: 100%; overflow: hidden; }
-svg { width: 100%; height: auto; display: block; }
+.chart-wrap {
+  width: 100%;
+  overflow: auto;
+  position: relative;
+  border-radius: 14px;
+  scroll-behavior: smooth;
+}
+svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform .18s ease;
+  transform-origin: 0 0;
+}
+.zoom-tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin: 8px 0 6px;
+}
+.zoom-btn {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.055);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+}
+.zoom-btn:hover { background: rgba(255,255,255,.10); }
+.zoom-note { color: var(--muted); font-size: 11px; margin-right: auto; }
 .axis-label { fill: var(--muted); font-size: 11px; }
 .point-label { fill: var(--text); font-size: 10px; opacity: .92; }
 .tooltip {
@@ -187,9 +259,26 @@ button, select { font-family: inherit; }
   font-size: 11px;
   font-weight: 800;
 }
+.reco-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.reco-card {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,.035);
+}
+.reco-card strong { color: var(--text); }
+.reco-card p { margin: 8px 0 0; }
+.next-step-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.step-chip {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.035);
+  padding: 12px;
+}
+.step-chip strong { display:block; color: var(--text); margin-bottom: 6px; }
 
 @media (max-width: 980px) {
-  .kpi-grid, .two-col, .three-col { grid-template-columns: 1fr; }
+  .kpi-grid, .two-col, .three-col, .reco-grid, .next-step-grid { grid-template-columns: 1fr; }
   header, .container { padding-left: 18px; padding-right: 18px; }
 }
 </style>
@@ -197,9 +286,12 @@ button, select { font-family: inherit; }
 <body>
 <header>
   <div class="eyebrow">Bogotá DataJam 2026 · Visor territorial</div>
-  <h1>Violencia intrafamiliar en Bogotá: dónde mirar primero</h1>
+  <div class="title-row">
+    <h1>Violencia intrafamiliar en Bogotá: dónde mirar primero</h1>
+    <div class="team-inline"><span class="team-label">Equipo:</span><span class="team-members">Jeisson Orlando Rodríguez · Erika Samboni · Luisa Fernanda Carbonell</span></div>
+  </div>
   <div class="subtitle">
-    Este visor ordena la evidencia territorial de violencia intrafamiliar en Bogotá para identificar dónde conviene mirar primero: demanda de atención, intensidad relativa y coincidencias con señales de entorno.
+    Señales del entorno (Violencia intrafamiliar, Consumos SPA y Lesiones personales)
   </div>
 </header>
 
@@ -233,6 +325,7 @@ button, select { font-family: inherit; }
     <button class="tab" data-tab="indice">3. Índice VIF</button>
     <button class="tab" data-tab="localidad">4. Ficha de localidad</button>
     <button class="tab" data-tab="metodo">5. Cómo leerlo</button>
+    <button class="tab" data-tab="recomendaciones">6. Recomendaciones</button>
   </div>
 
   <section id="lectura" class="section active">
@@ -360,6 +453,61 @@ button, select { font-family: inherit; }
     </div>
   </section>
 
+  <section id="recomendaciones" class="section">
+    <div class="grid two-col">
+      <div class="card">
+        <h2>Recomendaciones de política pública</h2>
+        <p>Estas recomendaciones salen de la lectura combinada de carga, tasa, persistencia, participación de mujeres y NNA, e índice de contexto. No prueban causalidad; ordenan prioridades para decidir dónde mirar y qué coordinar primero.</p>
+        <div class="grid reco-grid">
+          <div class="reco-card">
+            <span class="badge pink">Prioridad integral</span>
+            <p><strong>Los Mártires, Santa Fe y La Candelaria.</strong> Combinar atención familiar, salud mental, convivencia y presencia institucional. Antes de decidir metas, revisar población flotante y dinámicas de centralidad urbana.</p>
+          </div>
+          <div class="reco-card">
+            <span class="badge yellow">VIF alta</span>
+            <p><strong>Ciudad Bolívar, Bosa y San Cristóbal.</strong> Reforzar rutas de atención, prevención en hogares, enfoque de género y protección de niñas, niños y adolescentes. El énfasis debe estar en continuidad, no en acciones aisladas.</p>
+          </div>
+          <div class="reco-card">
+            <span class="badge blue">Alta demanda</span>
+            <p><strong>Kennedy, Suba y Engativá.</strong> Tienen mucha carga por volumen poblacional. Requieren capacidad operativa, seguimiento de tiempos de respuesta y lectura por UPZ o microterritorios para evitar diagnósticos demasiado gruesos.</p>
+          </div>
+          <div class="reco-card">
+            <span class="badge green">Gestión del dato</span>
+            <p><strong>Para toda Bogotá.</strong> Mantener trazabilidad por fuente, periodo, localidad e indicador. No sumar fenómenos distintos: VIF, lesiones y SPA deben leerse como señales comparables, no como un solo conteo.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Qué decisión permite tomar</h2>
+        <table class="small-table">
+          <tr><th>Hallazgo del tablero</th><th>Decisión sugerida</th></tr>
+          <tr><td>Alta tasa y alta persistencia</td><td>Priorizar diagnóstico territorial y continuidad de intervención.</td></tr>
+          <tr><td>Alta carga pero índice medio o bajo</td><td>Fortalecer capacidad de atención y segmentar por UPZ o barrio.</td></tr>
+          <tr><td>VIF alta con contexto alto</td><td>Coordinar respuesta intersectorial: seguridad, salud, integración social y gobierno local.</td></tr>
+          <tr><td>Brecha VIF-contexto positiva</td><td>Focalizar prevención familiar y rutas de atención.</td></tr>
+          <tr><td>Brecha negativa</td><td>No descartar VIF; revisar tensiones urbanas que superan el indicador familiar.</td></tr>
+        </table>
+        <div class="note"><strong>Uso recomendado:</strong> convertir esta lectura en una mesa de priorización con equipos territoriales. El tablero no reemplaza el criterio institucional; lo organiza.</div>
+      </div>
+    </div>
+
+    <div style="height:18px"></div>
+
+    <div class="card">
+      <h2>Paso a seguir: tablero integrado de problemáticas urbanas</h2>
+      <p>La idea es ampliar este visor hacia un tablero que ponga en conversación tres problemáticas de ciudad: <strong>violencia intrafamiliar, basuras/residuos y movilidad</strong>. El objetivo no es decir que una causa la otra, sino identificar territorios donde coinciden presión familiar, deterioro del entorno urbano y barreras de desplazamiento o acceso a servicios.</p>
+      <p>El tablero futuro debería permitir una lectura por localidad y, cuando la calidad del dato lo permita, por UPZ o microterritorio. La regla metodológica se mantiene: cada fenómeno conserva su fuente, sus transformaciones y su indicador; no se suman registros entre bases.</p>
+      <div class="grid next-step-grid">
+        <div class="step-chip"><strong>Violencia intrafamiliar</strong><span>Casos, tasa, persistencia, mujeres/NNA, concentración territorial y rutas de atención.</span></div>
+        <div class="step-chip"><strong>Basuras y residuos</strong><span>Puntos críticos, arrojo clandestino, frecuencia, persistencia y cercanía a zonas residenciales o equipamientos.</span></div>
+        <div class="step-chip"><strong>Movilidad</strong><span>Siniestros, tiempos de desplazamiento, congestión, accesibilidad a servicios y barreras para llegar a oferta institucional.</span></div>
+        <div class="step-chip"><strong>Entorno social</strong><span>Lesiones personales, consumo abusivo de SPA, salud mental o conflictividades como señales de contexto territorial.</span></div>
+        <div class="step-chip"><strong>Oferta institucional</strong><span>Comisarías, salud, integración social, colegios, CAI y puntos de atención para revisar brechas de cobertura.</span></div>
+      </div>
+      <div class="note"><strong>Arquitectura propuesta:</strong> construir un diccionario maestro de fenómenos, normalizar localidades y periodos, calcular indicadores comparables y crear un índice de entorno urbano que pueda contrastarse con VIF sin afirmar causalidad. El resultado esperado sería un tablero de priorización: dónde coinciden VIF, basuras y movilidad, qué localidades requieren mirada integral y qué tipo de respuesta pública conviene activar primero.</div>
+    </div>
+  </section>
+
   <div class="footer-note">
     <strong>Este visor ayuda a ordenar la información para decidir dónde mirar primero.</strong> La decisión final debe contrastarse con equipos territoriales y fuentes institucionales.
   </div>
@@ -428,6 +576,39 @@ function attachTooltip(el, d) {
   el.addEventListener("mouseleave", () => tip.style.display = "none");
 }
 
+function enhanceZoom(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el || el.dataset.zoomReady === "1") return;
+  el.dataset.zoomReady = "1";
+  const svg = el.querySelector("svg");
+  if (!svg) return;
+
+  let zoom = 1;
+  const tools = document.createElement("div");
+  tools.className = "zoom-tools";
+  tools.innerHTML = `
+    <span class="zoom-note">Zoom disponible en esta visualización. Al ampliar, usa el scroll para moverte.</span>
+    <button class="zoom-btn" type="button" data-zoom="out">−</button>
+    <button class="zoom-btn" type="button" data-zoom="in">+</button>
+    <button class="zoom-btn" type="button" data-zoom="reset">Restablecer</button>
+  `;
+  el.parentNode.insertBefore(tools, el);
+
+  function applyZoom() {
+    svg.style.transform = `scale(${zoom})`;
+    svg.style.width = `${100 * zoom}%`;
+  }
+
+  tools.addEventListener("click", (ev) => {
+    const action = ev.target.dataset.zoom;
+    if (!action) return;
+    if (action === "in") zoom = Math.min(2.2, +(zoom + 0.2).toFixed(1));
+    if (action === "out") zoom = Math.max(1, +(zoom - 0.2).toFixed(1));
+    if (action === "reset") zoom = 1;
+    applyZoom();
+  });
+}
+
 function drawScatter(containerId, xKey, yKey, xLabel, yLabel, mode="default") {
   const el = document.getElementById(containerId);
   const w = 760, h = 510, m = {l:70, r:24, t:30, b:70};
@@ -467,6 +648,7 @@ function drawScatter(containerId, xKey, yKey, xLabel, yLabel, mode="default") {
   });
   el.innerHTML = "";
   el.appendChild(svg);
+  enhanceZoom(containerId);
 }
 
 function drawBar(containerId, key, label, topN=12) {
@@ -491,6 +673,7 @@ function drawBar(containerId, key, label, topN=12) {
   svg.innerHTML += `<text x="${w/2}" y="${h-8}" text-anchor="middle" class="axis-label">${label}</text>`;
   el.innerHTML = "";
   el.appendChild(svg);
+  enhanceZoom(containerId);
 }
 
 function renderTopList() {
@@ -577,7 +760,10 @@ function initTabs() {
       $$(".tab").forEach(b=>b.classList.remove("active"));
       $$(".section").forEach(s=>s.classList.remove("active"));
       btn.classList.add("active");
-      $("#" + btn.dataset.tab).classList.add("active");
+      const section = $("#" + btn.dataset.tab);
+      section.classList.add("active");
+      btn.scrollIntoView({behavior: "smooth", inline: "center", block: "nearest"});
+      window.scrollTo({top: document.querySelector(".tabs").offsetTop, behavior: "smooth"});
     });
   });
 }
