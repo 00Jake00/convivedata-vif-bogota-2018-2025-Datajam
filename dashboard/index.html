@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DataJam Bogotá · Visor territorial VIF</title>
+<style>
+:root {
+  --bg: #081018;
+  --panel: #101b27;
+  --panel2: #142234;
+  --text: #eef6ff;
+  --muted: #9eb2c8;
+  --line: rgba(255,255,255,.12);
+  --yellow: #ffd166;
+  --blue: #72ddf7;
+  --pink: #ef476f;
+  --green: #06d6a0;
+  --orange: #f77f00;
+  --white: #fff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(114,221,247,.16), transparent 32%),
+    radial-gradient(circle at top right, rgba(239,71,111,.14), transparent 30%),
+    var(--bg);
+  color: var(--text);
+}
+header {
+  padding: 28px 34px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.eyebrow {
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  font-size: 12px;
+  font-weight: 800;
+}
+h1 {
+  margin: 10px 0 8px;
+  font-size: clamp(30px, 5vw, 54px);
+  line-height: .98;
+  max-width: 1040px;
+}
+.subtitle {
+  max-width: 1040px;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.45;
+}
+.container { padding: 22px 34px 44px; }
+.grid { display: grid; gap: 18px; }
+.kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 22px; }
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02));
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.2);
+}
+.kpi-label {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-weight: 800;
+}
+.kpi-value { margin-top: 8px; font-size: 28px; font-weight: 900; }
+.kpi-note { color: var(--muted); margin-top: 6px; font-size: 13px; }
+.tabs { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 22px; }
+.tab {
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: rgba(255,255,255,.04);
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+}
+.tab.active { background: var(--yellow); color: #171100; border-color: transparent; }
+.section { display: none; }
+.section.active { display: block; }
+.two-col { grid-template-columns: 1.05fr .95fr; align-items: stretch; }
+.three-col { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+h2 { margin: 0 0 10px; font-size: 24px; }
+h3 { margin: 0 0 10px; font-size: 18px; }
+p { color: var(--muted); line-height: 1.5; }
+.chart-wrap { width: 100%; overflow: hidden; }
+svg { width: 100%; height: auto; display: block; }
+.axis-label { fill: var(--muted); font-size: 11px; }
+.point-label { fill: var(--text); font-size: 10px; opacity: .92; }
+.tooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 99;
+  background: rgba(8,16,24,.96);
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 13px;
+  max-width: 300px;
+  display: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+}
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 999px; padding: 6px 10px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid var(--line);
+  color: var(--text); font-size: 12px; font-weight: 800;
+}
+.badge.yellow { background: rgba(255,209,102,.16); color: var(--yellow); }
+.badge.green { background: rgba(6,214,160,.14); color: var(--green); }
+.badge.pink { background: rgba(239,71,111,.14); color: #ff8fa8; }
+.badge.blue { background: rgba(114,221,247,.13); color: var(--blue); }
+.badge.orange { background: rgba(247,127,0,.14); color: var(--orange); }
+.list { display: grid; gap: 10px; }
+.locality-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255,255,255,.035);
+}
+.locality-row strong { font-size: 15px; }
+.locality-row small { color: var(--muted); display:block; margin-top:4px; }
+.select {
+  width: 100%;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 12px;
+  font-weight: 800;
+  outline: none;
+}
+.metric {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.035);
+}
+.metric .num { font-size: 24px; font-weight: 900; }
+.metric .lbl { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; font-weight: 800; }
+.callout {
+  border-left: 4px solid var(--yellow);
+  background: rgba(255,209,102,.08);
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: var(--text);
+}
+.callout p { margin: 4px 0 0; }
+.note {
+  border-left: 4px solid var(--blue);
+  background: rgba(114,221,247,.08);
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: var(--text);
+  margin-top: 12px;
+}
+.footer-note { margin-top: 22px; color: var(--muted); font-size: 13px; }
+button, select { font-family: inherit; }
+.small-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.small-table th, .small-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.small-table th { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: 11px; }
+
+.source-pill {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+@media (max-width: 980px) {
+  .kpi-grid, .two-col, .three-col { grid-template-columns: 1fr; }
+  header, .container { padding-left: 18px; padding-right: 18px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Bogotá DataJam 2026 · Visor territorial</div>
+  <h1>Violencia intrafamiliar en Bogotá: dónde mirar primero</h1>
+  <div class="subtitle">
+    Este visor ordena la evidencia territorial de violencia intrafamiliar en Bogotá para identificar dónde conviene mirar primero: demanda de atención, intensidad relativa y coincidencias con señales de entorno.
+  </div>
+</header>
+
+<div class="container">
+  <div class="grid kpi-grid">
+    <div class="card">
+      <div class="kpi-label">Casos localizados de VIF</div>
+      <div class="kpi-value">283,773</div>
+      <div class="kpi-note">Periodo usado para lectura territorial: 2018-2025</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Más casos registrados</div>
+      <div class="kpi-value">Kennedy</div>
+      <div class="kpi-note">Casos acumulados 2018-2025</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Mayor índice VIF</div>
+      <div class="kpi-value">Los Mártires</div>
+      <div class="kpi-note">Índice VIF</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Mayor brecha VIF-contexto</div>
+      <div class="kpi-value">Ciudad Bolívar</div>
+      <div class="kpi-note">VIF por encima del contexto territorial</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="lectura">1. Panorama</button>
+    <button class="tab" data-tab="cuadrante">2. Carga e intensidad</button>
+    <button class="tab" data-tab="indice">3. Índice VIF</button>
+    <button class="tab" data-tab="localidad">4. Ficha de localidad</button>
+    <button class="tab" data-tab="metodo">5. Cómo leerlo</button>
+  </div>
+
+  <section id="lectura" class="section active">
+    <div class="grid two-col">
+      <div class="card">
+        <h2>Qué muestra este visor</h2>
+        <div class="callout">
+          <strong>Un solo ranking puede llevar a malas decisiones.</strong>
+          <p>Una localidad puede estar arriba porque tiene muchos habitantes, porque la tasa es alta o porque el problema se repite año tras año. Por eso se muestran varias lecturas antes de hablar de prioridad.</p>
+        </div>
+        <div style="height:16px"></div>
+        <div class="grid three-col">
+          <div class="metric">
+            <div class="lbl">Carga</div>
+            <div class="num">Casos</div>
+            <p>Muestra dónde se concentra la demanda de atención.</p>
+          </div>
+          <div class="metric">
+            <div class="lbl">Intensidad</div>
+            <div class="num">Tasa</div>
+            <p>Ayuda a comparar localidades, con cuidado frente al tamaño de la población.</p>
+          </div>
+          <div class="metric">
+            <div class="lbl">Índice VIF</div>
+            <div class="num">Índice</div>
+            <p>Combina tasa, persistencia, mujeres/NNA y volumen.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Localidades que requieren mirar primero</h2>
+        <div id="topIndiceList" class="list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="cuadrante" class="section">
+    <div class="grid two-col">
+      <div class="card">
+        <h2>Carga vs intensidad</h2>
+        <p>Cada punto representa una localidad. El gráfico separa cantidad de casos y tasa frente a la población.</p>
+        <div class="note">Las tasas usan población residente de referencia. En zonas centrales, la población flotante puede afectar la lectura.</div>
+        <div id="scatterCargaTasa" class="chart-wrap"></div>
+      </div>
+      <div class="card">
+        <h2>Cómo interpretar el gráfico</h2>
+        <table class="small-table">
+          <tr><th>Cuadrante</th><th>Uso en decisión</th></tr>
+          <tr><td>Alta carga + alta tasa</td><td>Revisar primero</td></tr>
+          <tr><td>Alta carga + baja tasa</td><td>Más capacidad de atención</td></tr>
+          <tr><td>Baja carga + alta tasa</td><td>Revisar si la tasa sube por una población pequeña</td></tr>
+          <tr><td>Baja carga + baja tasa</td><td>Monitoreo</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="indice" class="section">
+    <div class="grid two-col">
+      <div class="card">
+        <h2>Índice VIF</h2>
+        <p>El índice combina tasa, persistencia temporal, participación de mujeres y NNA, y volumen de casos. No reemplaza el análisis territorial; ayuda a ordenar por dónde empezar.</p>
+        <div id="barIndice" class="chart-wrap"></div>
+      </div>
+      <div class="card">
+        <h2>VIF frente a señales del entorno</h2>
+        <p>Lesiones personales y consumo abusivo de SPA no se suman a la VIF. Se muestran aparte para ver si la localidad también presenta otras tensiones territoriales.</p>
+        <div class="note">Estar en el cuadrante superior derecho no significa que una cosa cause la otra. Significa que allí coinciden señales que vale la pena revisar juntas.</div>
+        <div id="scatterContexto" class="chart-wrap"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="localidad" class="section">
+    <div class="grid two-col">
+      <div class="card">
+        <h2>Ficha de localidad</h2>
+        <select id="localidadSelect" class="select"></select>
+        <div style="height:14px"></div>
+        <div id="localidadFicha"></div>
+      </div>
+      <div class="card">
+        <h2>Lectura territorial</h2>
+        <div id="localidadNarrativa" class="callout"></div>
+        <div style="height:16px"></div>
+        <h3>Cifras principales</h3>
+        <div id="miniBars"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="metodo" class="section">
+    <div class="grid two-col">
+      <div class="card">
+        <h2>Reglas para leer los datos</h2>
+        <div class="list">
+          <div class="locality-row"><div><strong>1. Las fuentes no se suman</strong><small>VIF, lesiones personales y consumo abusivo de SPA son fenómenos distintos. Se comparan por indicadores territoriales, no se mezclan en un solo conteo.</small></div><span class="badge green">OK</span></div>
+          <div class="locality-row"><div><strong>2. La integración es territorial</strong><small>La comparación se hace por localidad, periodo e indicador. No se cruzan casos individuales ni se asume equivalencia entre registros.</small></div><span class="badge blue">Base</span></div>
+          <div class="locality-row"><div><strong>3. Separar volumen e intensidad</strong><small>Los casos muestran demanda institucional; las tasas permiten comparar territorios con tamaños poblacionales distintos.</small></div><span class="badge yellow">Clave</span></div>
+          <div class="locality-row"><div><strong>4. Coincidencia no significa causa</strong><small>Que dos señales aparezcan en la misma localidad no prueba que una produzca la otra. Sirve para orientar preguntas y priorizar revisión territorial.</small></div><span class="badge pink">Cuidado</span></div>
+        </div>
+        <div class="note"><strong>Ajuste metodológico:</strong> la exploración inicial revisó otras señales urbanas. La versión final se concentra en VIF, lesiones personales y consumo abusivo de SPA porque son las fuentes usadas en el visor y permiten una comparación territorial más consistente para 2018-2025.</div>
+      </div>
+      <div class="card">
+        <h2>Fuentes utilizadas</h2>
+        <table class="small-table">
+          <tr><th>Fuente / insumo</th><th>Uso en el visor</th></tr>
+          <tr><td>Violencia intrafamiliar y de género</td><td>Fenómeno principal: casos, tasa, persistencia e índice VIF.</td></tr>
+          <tr><td>Lesiones personales</td><td>Señal de contexto territorial. No se suma a VIF.</td></tr>
+          <tr><td>Consumo abusivo de SPA</td><td>Señal complementaria de salud y convivencia. No se suma a VIF.</td></tr>
+          <tr><td>Prevalencia de consumo de SPA</td><td>Insumo exploratorio 2022. No entra en el índice principal.</td></tr>
+          <tr><td>Población de referencia por localidad</td><td>Denominador para tasas promedio anual por 100.000 habitantes.</td></tr>
+        </table>
+        <div style="height:14px"></div>
+        <h2>Cómo se construyó el índice</h2>
+        <table class="small-table">
+          <tr><th>Criterio</th><th>Peso</th></tr>
+          <tr><td>Tasa de VIF</td><td>40%</td></tr>
+          <tr><td>Persistencia anual sobre la mediana de localidades</td><td>30%</td></tr>
+          <tr><td>Mujeres y NNA</td><td>20%</td></tr>
+          <tr><td>Casos registrados</td><td>10%</td></tr>
+        </table>
+        <p class="footer-note">La brecha VIF-contexto se calcula como índice VIF menos índice de contexto. Un valor negativo indica que el contexto territorial supera el índice VIF; no debe leerse como ausencia de violencia intrafamiliar.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer-note">
+    <strong>Este visor ayuda a ordenar la información para decidir dónde mirar primero.</strong> La decisión final debe contrastarse con equipos territoriales y fuentes institucionales.
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DATA = [{"localidad": "Bosa","loc_norm": "BOSA","poblacion_ref": 673077,"vif_casos_2018_2025": 31314.0,"vif_tasa_prom_anual_100k": 581.55,"vif_persistencia_anios": 7,"pct_mujeres_nna_vif": 79.53,"lesiones_casos_2018_2025": 14132,"lesiones_tasa_prom_anual_100k": 262.45,"spa_abusivo_casos_2018_2025": 5943,"spa_abusivo_tasa_prom_anual_100k": 110.37,"indice_vif_familiar": 68.28,"indice_contexto": 17.3,"brecha_vif_contexto": 50.98,"rank_vif_carga": 4,"rank_vif_tasa": 4,"rank_vif_familiar": 4,"cambio_carga_vs_tasa": 0,"nivel_vif_familiar": "alto","nivel_contexto": "bajo","tipo_decision": "VIF alta con contexto moderado","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "La prioridad debería estar en rutas de atención, prevención en hogares, enfoque de género y protección de niñas, niños y adolescentes.","lectura_breve": "Registra 31.314 casos entre 2018 y 2025, con una carga alta frente al resto de localidades. La tasa promedio es de 582 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es bajo.","lectura_breve_final": "Registra 31.314 casos entre 2018 y 2025, con una carga alta frente al resto de localidades. La tasa promedio es de 582 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es bajo."},{"localidad": "Ciudad Bolívar","loc_norm": "CIUDAD BOLIVAR","poblacion_ref": 707569,"vif_casos_2018_2025": 32707.0,"vif_tasa_prom_anual_100k": 577.81,"vif_persistencia_anios": 8,"pct_mujeres_nna_vif": 80.45,"lesiones_casos_2018_2025": 16160,"lesiones_tasa_prom_anual_100k": 285.48,"spa_abusivo_casos_2018_2025": 4909,"spa_abusivo_tasa_prom_anual_100k": 86.72,"indice_vif_familiar": 74.13,"indice_contexto": 17.31,"brecha_vif_contexto": 56.82,"rank_vif_carga": 3,"rank_vif_tasa": 5,"rank_vif_familiar": 2,"cambio_carga_vs_tasa": -2,"nivel_vif_familiar": "alto","nivel_contexto": "bajo","tipo_decision": "VIF alta con contexto moderado","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "La prioridad debería estar en rutas de atención, prevención en hogares, enfoque de género y protección de niñas, niños y adolescentes.","lectura_breve": "Registra 32.707 casos entre 2018 y 2025, con una carga alta frente al resto de localidades. La tasa promedio es de 578 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es bajo.","lectura_breve_final": "Registra 32.707 casos entre 2018 y 2025, con una carga alta frente al resto de localidades. La tasa promedio es de 578 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es bajo."},{"localidad": "San Cristóbal","loc_norm": "SAN CRISTOBAL","poblacion_ref": 404697,"vif_casos_2018_2025": 17723.0,"vif_tasa_prom_anual_100k": 547.42,"vif_persistencia_anios": 8,"pct_mujeres_nna_vif": 79.32,"lesiones_casos_2018_2025": 9979,"lesiones_tasa_prom_anual_100k": 308.22,"spa_abusivo_casos_2018_2025": 2993,"spa_abusivo_tasa_prom_anual_100k": 92.45,"indice_vif_familiar": 66.32,"indice_contexto": 18.96,"brecha_vif_contexto": 47.36,"rank_vif_carga": 6,"rank_vif_tasa": 6,"rank_vif_familiar": 6,"cambio_carga_vs_tasa": 0,"nivel_vif_familiar": "alto","nivel_contexto": "bajo","tipo_decision": "VIF alta con contexto moderado","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "La prioridad debería estar en rutas de atención, prevención en hogares, enfoque de género y protección de niñas, niños y adolescentes.","lectura_breve": "Registra 17.723 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 547 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es bajo.","lectura_breve_final": "Registra 17.723 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 547 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es bajo."},{"localidad": "Los Mártires","loc_norm": "LOS MARTIRES","poblacion_ref": 99119,"vif_casos_2018_2025": 8819.0,"vif_tasa_prom_anual_100k": 1112.17,"vif_persistencia_anios": 8,"pct_mujeres_nna_vif": 74.28,"lesiones_casos_2018_2025": 6496,"lesiones_tasa_prom_anual_100k": 819.22,"spa_abusivo_casos_2018_2025": 7099,"spa_abusivo_tasa_prom_anual_100k": 895.26,"indice_vif_familiar": 76.18,"indice_contexto": 94.0,"brecha_vif_contexto": -17.82,"rank_vif_carga": 12,"rank_vif_tasa": 1,"rank_vif_familiar": 1,"cambio_carga_vs_tasa": 11,"nivel_vif_familiar": "alto","nivel_contexto": "alto","tipo_decision": "VIF alta con entorno complejo","alerta_lectura": "Media: posible efecto de población flotante o centralidad urbana.","accion_sugerida": "Conviene revisar la oferta de atención familiar junto con salud mental, convivencia y presencia institucional en el territorio.","lectura_breve": "Registra 8.819 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 1112 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es alto. Conviene revisar población flotante y dinámica urbana antes de sacar conclusiones.","lectura_breve_final": "Registra 8.819 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 1112 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es alto. Conviene revisar población flotante y dinámica urbana antes de sacar conclusiones."},{"localidad": "Usme","loc_norm": "USME","poblacion_ref": 457302,"vif_casos_2018_2025": 15558.0,"vif_tasa_prom_anual_100k": 425.27,"vif_persistencia_anios": 6,"pct_mujeres_nna_vif": 80.63,"lesiones_casos_2018_2025": 9623,"lesiones_tasa_prom_anual_100k": 263.04,"spa_abusivo_casos_2018_2025": 3408,"spa_abusivo_tasa_prom_anual_100k": 93.16,"indice_vif_familiar": 55.95,"indice_contexto": 16.37,"brecha_vif_contexto": 39.58,"rank_vif_carga": 7,"rank_vif_tasa": 10,"rank_vif_familiar": 7,"cambio_carga_vs_tasa": -3,"nivel_vif_familiar": "medio","nivel_contexto": "bajo","tipo_decision": "Seguimiento focalizado","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "La VIF pesa más que las señales de contexto. Vale la pena mirar con más detalle la dinámica familiar y las rutas de atención.","lectura_breve": "Registra 15.558 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 425 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo.","lectura_breve_final": "Registra 15.558 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 425 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo."},{"localidad": "Santa Fe","loc_norm": "SANTA FE","poblacion_ref": 110048,"vif_casos_2018_2025": 7813.0,"vif_tasa_prom_anual_100k": 887.45,"vif_persistencia_anios": 8,"pct_mujeres_nna_vif": 74.93,"lesiones_casos_2018_2025": 6441,"lesiones_tasa_prom_anual_100k": 731.61,"spa_abusivo_casos_2018_2025": 4877,"spa_abusivo_tasa_prom_anual_100k": 553.96,"indice_vif_familiar": 68.21,"indice_contexto": 69.66,"brecha_vif_contexto": -1.45,"rank_vif_carga": 13,"rank_vif_tasa": 3,"rank_vif_familiar": 5,"cambio_carga_vs_tasa": 10,"nivel_vif_familiar": "alto","nivel_contexto": "alto","tipo_decision": "VIF alta con entorno complejo","alerta_lectura": "Media: posible efecto de población flotante o centralidad urbana.","accion_sugerida": "Conviene revisar la oferta de atención familiar junto con salud mental, convivencia y presencia institucional en el territorio.","lectura_breve": "Registra 7.813 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 887 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es alto. Conviene revisar población flotante y dinámica urbana antes de sacar conclusiones.","lectura_breve_final": "Registra 7.813 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 887 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es alto. Conviene revisar población flotante y dinámica urbana antes de sacar conclusiones."},{"localidad": "La Candelaria","loc_norm": "LA CANDELARIA","poblacion_ref": 24088,"vif_casos_2018_2025": 2128.0,"vif_tasa_prom_anual_100k": 1104.28,"vif_persistencia_anios": 8,"pct_mujeres_nna_vif": 72.46,"lesiones_casos_2018_2025": 1777,"lesiones_tasa_prom_anual_100k": 922.14,"spa_abusivo_casos_2018_2025": 1634,"spa_abusivo_tasa_prom_anual_100k": 847.93,"indice_vif_familiar": 70.28,"indice_contexto": 97.33,"brecha_vif_contexto": -27.05,"rank_vif_carga": 19,"rank_vif_tasa": 2,"rank_vif_familiar": 3,"cambio_carga_vs_tasa": 17,"nivel_vif_familiar": "alto","nivel_contexto": "alto","tipo_decision": "VIF alta con entorno complejo","alerta_lectura": "Alta: población pequeña. Interpretar tasas con cautela.","accion_sugerida": "Conviene revisar la oferta de atención familiar junto con salud mental, convivencia y presencia institucional en el territorio.","lectura_breve": "Registra 2.128 casos entre 2018 y 2025, con una carga baja frente al resto de localidades. La tasa promedio es de 1104 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es alto. La tasa debe leerse con cautela porque la población es pequeña.","lectura_breve_final": "Registra 2.128 casos entre 2018 y 2025, con una carga baja frente al resto de localidades. La tasa promedio es de 1104 por 100.000 habitantes. El índice VIF es alto y el contexto territorial es alto. La tasa debe leerse con cautela porque la población es pequeña."},{"localidad": "Kennedy","loc_norm": "KENNEDY","poblacion_ref": 1088443,"vif_casos_2018_2025": 34615.0,"vif_tasa_prom_anual_100k": 397.53,"vif_persistencia_anios": 3,"pct_mujeres_nna_vif": 79.46,"lesiones_casos_2018_2025": 20577,"lesiones_tasa_prom_anual_100k": 236.31,"spa_abusivo_casos_2018_2025": 7581,"spa_abusivo_tasa_prom_anual_100k": 87.06,"indice_vif_familiar": 46.76,"indice_contexto": 14.46,"brecha_vif_contexto": 32.3,"rank_vif_carga": 1,"rank_vif_tasa": 12,"rank_vif_familiar": 8,"cambio_carga_vs_tasa": -11,"nivel_vif_familiar": "medio","nivel_contexto": "bajo","tipo_decision": "Seguimiento focalizado","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "La VIF pesa más que las señales de contexto. Vale la pena mirar con más detalle la dinámica familiar y las rutas de atención.","lectura_breve": "Registra 34.615 casos entre 2018 y 2025, con una carga alta frente al resto de localidades. La tasa promedio es de 398 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo.","lectura_breve_final": "Registra 34.615 casos entre 2018 y 2025, con una carga alta frente al resto de localidades. La tasa promedio es de 398 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo."},{"localidad": "Rafael Uribe Uribe","loc_norm": "RAFAEL URIBE URIBE","poblacion_ref": 374246,"vif_casos_2018_2025": 12593.0,"vif_tasa_prom_anual_100k": 420.61,"vif_persistencia_anios": 3,"pct_mujeres_nna_vif": 78.67,"lesiones_casos_2018_2025": 9394,"lesiones_tasa_prom_anual_100k": 313.76,"spa_abusivo_casos_2018_2025": 2798,"spa_abusivo_tasa_prom_anual_100k": 93.45,"indice_vif_familiar": 39.72,"indice_contexto": 19.34,"brecha_vif_contexto": 20.38,"rank_vif_carga": 8,"rank_vif_tasa": 11,"rank_vif_familiar": 10,"cambio_carga_vs_tasa": -3,"nivel_vif_familiar": "medio","nivel_contexto": "bajo","tipo_decision": "Seguimiento focalizado","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "La VIF pesa más que las señales de contexto. Vale la pena mirar con más detalle la dinámica familiar y las rutas de atención.","lectura_breve": "Registra 12.593 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 421 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo.","lectura_breve_final": "Registra 12.593 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 421 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo."},{"localidad": "Tunjuelito","loc_norm": "TUNJUELITO","poblacion_ref": 199430,"vif_casos_2018_2025": 7002.0,"vif_tasa_prom_anual_100k": 438.88,"vif_persistencia_anios": 4,"pct_mujeres_nna_vif": 77.71,"lesiones_casos_2018_2025": 4758,"lesiones_tasa_prom_anual_100k": 298.22,"spa_abusivo_casos_2018_2025": 2472,"spa_abusivo_tasa_prom_anual_100k": 154.94,"indice_vif_familiar": 40.65,"indice_contexto": 21.9,"brecha_vif_contexto": 18.75,"rank_vif_carga": 14,"rank_vif_tasa": 9,"rank_vif_familiar": 9,"cambio_carga_vs_tasa": 5,"nivel_vif_familiar": "medio","nivel_contexto": "bajo","tipo_decision": "Seguimiento focalizado","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "La VIF pesa más que las señales de contexto. Vale la pena mirar con más detalle la dinámica familiar y las rutas de atención.","lectura_breve": "Registra 7.002 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 439 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo.","lectura_breve_final": "Registra 7.002 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 439 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo."},{"localidad": "Chapinero","loc_norm": "CHAPINERO","poblacion_ref": 139701,"vif_casos_2018_2025": 5119.0,"vif_tasa_prom_anual_100k": 458.03,"vif_persistencia_anios": 4,"pct_mujeres_nna_vif": 76.38,"lesiones_casos_2018_2025": 4435,"lesiones_tasa_prom_anual_100k": 396.83,"spa_abusivo_casos_2018_2025": 2185,"spa_abusivo_tasa_prom_anual_100k": 195.51,"indice_vif_familiar": 38.22,"indice_contexto": 29.94,"brecha_vif_contexto": 8.28,"rank_vif_carga": 16,"rank_vif_tasa": 8,"rank_vif_familiar": 11,"cambio_carga_vs_tasa": 8,"nivel_vif_familiar": "medio","nivel_contexto": "bajo","tipo_decision": "Seguimiento focalizado","alerta_lectura": "Media: posible efecto de población flotante o centralidad urbana.","accion_sugerida": "Mantener seguimiento y contrastar con nuevos cortes de información y conocimiento territorial.","lectura_breve": "Registra 5.119 casos entre 2018 y 2025, con una carga baja frente al resto de localidades. La tasa promedio es de 458 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo. Conviene revisar población flotante y dinámica urbana antes de sacar conclusiones.","lectura_breve_final": "Registra 5.119 casos entre 2018 y 2025, con una carga baja frente al resto de localidades. La tasa promedio es de 458 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo. Conviene revisar población flotante y dinámica urbana antes de sacar conclusiones."},{"localidad": "Puente Aranda","loc_norm": "PUENTE ARANDA","poblacion_ref": 258287,"vif_casos_2018_2025": 9643.0,"vif_tasa_prom_anual_100k": 466.68,"vif_persistencia_anios": 3,"pct_mujeres_nna_vif": 76.39,"lesiones_casos_2018_2025": 7077,"lesiones_tasa_prom_anual_100k": 342.5,"spa_abusivo_casos_2018_2025": 4242,"spa_abusivo_tasa_prom_anual_100k": 205.29,"indice_vif_familiar": 36.14,"indice_contexto": 27.32,"brecha_vif_contexto": 8.82,"rank_vif_carga": 11,"rank_vif_tasa": 7,"rank_vif_familiar": 12,"cambio_carga_vs_tasa": 4,"nivel_vif_familiar": "medio","nivel_contexto": "bajo","tipo_decision": "Seguimiento focalizado","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "Mantener seguimiento y contrastar con nuevos cortes de información y conocimiento territorial.","lectura_breve": "Registra 9.643 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 467 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo.","lectura_breve_final": "Registra 9.643 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 467 por 100.000 habitantes. El índice VIF es medio y el contexto territorial es bajo."},{"localidad": "Fontibón","loc_norm": "FONTIBON","poblacion_ref": 394648,"vif_casos_2018_2025": 12180.0,"vif_tasa_prom_anual_100k": 385.79,"vif_persistencia_anios": 2,"pct_mujeres_nna_vif": 77.82,"lesiones_casos_2018_2025": 6078,"lesiones_tasa_prom_anual_100k": 192.51,"spa_abusivo_casos_2018_2025": 4067,"spa_abusivo_tasa_prom_anual_100k": 128.82,"indice_vif_familiar": 32.76,"indice_contexto": 14.26,"brecha_vif_contexto": 18.5,"rank_vif_carga": 10,"rank_vif_tasa": 15,"rank_vif_familiar": 13,"cambio_carga_vs_tasa": -5,"nivel_vif_familiar": "bajo","nivel_contexto": "bajo","tipo_decision": "Monitoreo general","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "La VIF pesa más que las señales de contexto. Vale la pena mirar con más detalle la dinámica familiar y las rutas de atención.","lectura_breve": "Registra 12.180 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 386 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo.","lectura_breve_final": "Registra 12.180 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 386 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo."},{"localidad": "Suba","loc_norm": "SUBA","poblacion_ref": 1218513,"vif_casos_2018_2025": 33859.0,"vif_tasa_prom_anual_100k": 347.34,"vif_persistencia_anios": 0,"pct_mujeres_nna_vif": 77.72,"lesiones_casos_2018_2025": 15043,"lesiones_tasa_prom_anual_100k": 154.32,"spa_abusivo_casos_2018_2025": 6101,"spa_abusivo_tasa_prom_anual_100k": 62.59,"indice_vif_familiar": 29.8,"indice_contexto": 8.3,"brecha_vif_contexto": 21.5,"rank_vif_carga": 2,"rank_vif_tasa": 17,"rank_vif_familiar": 14,"cambio_carga_vs_tasa": -15,"nivel_vif_familiar": "bajo","nivel_contexto": "bajo","tipo_decision": "Monitoreo general","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "La VIF pesa más que las señales de contexto. Vale la pena mirar con más detalle la dinámica familiar y las rutas de atención.","lectura_breve": "Registra 33.859 casos entre 2018 y 2025, con una carga alta frente al resto de localidades. La tasa promedio es de 347 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo.","lectura_breve_final": "Registra 33.859 casos entre 2018 y 2025, con una carga alta frente al resto de localidades. La tasa promedio es de 347 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo."},{"localidad": "Teusaquillo","loc_norm": "TEUSAQUILLO","poblacion_ref": 153025,"vif_casos_2018_2025": 4859.0,"vif_tasa_prom_anual_100k": 396.91,"vif_persistencia_anios": 3,"pct_mujeres_nna_vif": 74.64,"lesiones_casos_2018_2025": 3690,"lesiones_tasa_prom_anual_100k": 301.42,"spa_abusivo_casos_2018_2025": 2428,"spa_abusivo_tasa_prom_anual_100k": 198.33,"indice_vif_familiar": 28.48,"indice_contexto": 24.53,"brecha_vif_contexto": 3.95,"rank_vif_carga": 17,"rank_vif_tasa": 13,"rank_vif_familiar": 15,"cambio_carga_vs_tasa": 4,"nivel_vif_familiar": "bajo","nivel_contexto": "bajo","tipo_decision": "Monitoreo general","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "Mantener seguimiento y contrastar con nuevos cortes de información y conocimiento territorial.","lectura_breve": "Registra 4.859 casos entre 2018 y 2025, con una carga baja frente al resto de localidades. La tasa promedio es de 397 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo.","lectura_breve_final": "Registra 4.859 casos entre 2018 y 2025, con una carga baja frente al resto de localidades. La tasa promedio es de 397 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo."},{"localidad": "Engativá","loc_norm": "ENGATIVA","poblacion_ref": 887080,"vif_casos_2018_2025": 26311.0,"vif_tasa_prom_anual_100k": 370.75,"vif_persistencia_anios": 0,"pct_mujeres_nna_vif": 77.05,"lesiones_casos_2018_2025": 12493,"lesiones_tasa_prom_anual_100k": 176.04,"spa_abusivo_casos_2018_2025": 5767,"spa_abusivo_tasa_prom_anual_100k": 81.26,"indice_vif_familiar": 27.21,"indice_contexto": 10.62,"brecha_vif_contexto": 16.59,"rank_vif_carga": 5,"rank_vif_tasa": 16,"rank_vif_familiar": 16,"cambio_carga_vs_tasa": -11,"nivel_vif_familiar": "bajo","nivel_contexto": "bajo","tipo_decision": "Monitoreo general","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "La VIF pesa más que las señales de contexto. Vale la pena mirar con más detalle la dinámica familiar y las rutas de atención.","lectura_breve": "Registra 26.311 casos entre 2018 y 2025, con una carga alta frente al resto de localidades. La tasa promedio es de 371 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo.","lectura_breve_final": "Registra 26.311 casos entre 2018 y 2025, con una carga alta frente al resto de localidades. La tasa promedio es de 371 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo."},{"localidad": "Sumapaz","loc_norm": "SUMAPAZ","poblacion_ref": 6531,"vif_casos_2018_2025": 57.0,"vif_tasa_prom_anual_100k": 109.1,"vif_persistencia_anios": 1,"pct_mujeres_nna_vif": 82.46,"lesiones_casos_2018_2025": 34,"lesiones_tasa_prom_anual_100k": 65.07,"spa_abusivo_casos_2018_2025": 4,"spa_abusivo_tasa_prom_anual_100k": 7.66,"indice_vif_familiar": 23.75,"indice_contexto": 0.0,"brecha_vif_contexto": 23.75,"rank_vif_carga": 20,"rank_vif_tasa": 20,"rank_vif_familiar": 17,"cambio_carga_vs_tasa": 0,"nivel_vif_familiar": "bajo","nivel_contexto": "bajo","tipo_decision": "Monitoreo general","alerta_lectura": "Alta: población pequeña. Interpretar tasas con cautela.","accion_sugerida": "La VIF pesa más que las señales de contexto. Vale la pena mirar con más detalle la dinámica familiar y las rutas de atención.","lectura_breve": "Registra 57 casos entre 2018 y 2025, con una carga baja frente al resto de localidades. La tasa promedio es de 109 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo. La tasa debe leerse con cautela porque la población es pequeña.","lectura_breve_final": "Registra 57 casos entre 2018 y 2025, con una carga baja frente al resto de localidades. La tasa promedio es de 109 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo. La tasa debe leerse con cautela porque la población es pequeña."},{"localidad": "Antonio Nariño","loc_norm": "ANTONIO NARINO","poblacion_ref": 109176,"vif_casos_2018_2025": 3383.0,"vif_tasa_prom_anual_100k": 387.33,"vif_persistencia_anios": 1,"pct_mujeres_nna_vif": 76.0,"lesiones_casos_2018_2025": 2859,"lesiones_tasa_prom_anual_100k": 327.34,"spa_abusivo_casos_2018_2025": 1185,"spa_abusivo_tasa_prom_anual_100k": 135.68,"indice_vif_familiar": 22.88,"indice_contexto": 22.51,"brecha_vif_contexto": 0.37,"rank_vif_carga": 18,"rank_vif_tasa": 14,"rank_vif_familiar": 18,"cambio_carga_vs_tasa": 4,"nivel_vif_familiar": "bajo","nivel_contexto": "bajo","tipo_decision": "Monitoreo general","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "Mantener seguimiento y contrastar con nuevos cortes de información y conocimiento territorial.","lectura_breve": "Registra 3.383 casos entre 2018 y 2025, con una carga baja frente al resto de localidades. La tasa promedio es de 387 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo.","lectura_breve_final": "Registra 3.383 casos entre 2018 y 2025, con una carga baja frente al resto de localidades. La tasa promedio es de 387 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo."},{"localidad": "Usaquén","loc_norm": "USAQUEN","poblacion_ref": 501999,"vif_casos_2018_2025": 12562.0,"vif_tasa_prom_anual_100k": 312.8,"vif_persistencia_anios": 0,"pct_mujeres_nna_vif": 76.17,"lesiones_casos_2018_2025": 6999,"lesiones_tasa_prom_anual_100k": 174.28,"spa_abusivo_casos_2018_2025": 2979,"spa_abusivo_tasa_prom_anual_100k": 74.18,"indice_vif_familiar": 19.17,"indice_contexto": 10.12,"brecha_vif_contexto": 9.05,"rank_vif_carga": 9,"rank_vif_tasa": 18,"rank_vif_familiar": 19,"cambio_carga_vs_tasa": -9,"nivel_vif_familiar": "bajo","nivel_contexto": "bajo","tipo_decision": "Monitoreo general","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "Mantener seguimiento y contrastar con nuevos cortes de información y conocimiento territorial.","lectura_breve": "Registra 12.562 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 313 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo.","lectura_breve_final": "Registra 12.562 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 313 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo."},{"localidad": "Barrios Unidos","loc_norm": "BARRIOS UNIDOS","poblacion_ref": 243465,"vif_casos_2018_2025": 5528.0,"vif_tasa_prom_anual_100k": 283.82,"vif_persistencia_anios": 0,"pct_mujeres_nna_vif": 76.03,"lesiones_casos_2018_2025": 4430,"lesiones_tasa_prom_anual_100k": 227.45,"spa_abusivo_casos_2018_2025": 1566,"spa_abusivo_tasa_prom_anual_100k": 80.4,"indice_vif_familiar": 15.69,"indice_contexto": 13.57,"brecha_vif_contexto": 2.12,"rank_vif_carga": 15,"rank_vif_tasa": 19,"rank_vif_familiar": 20,"cambio_carga_vs_tasa": -4,"nivel_vif_familiar": "bajo","nivel_contexto": "bajo","tipo_decision": "Monitoreo general","alerta_lectura": "Baja: lectura territorial más estable.","accion_sugerida": "Mantener seguimiento y contrastar con nuevos cortes de información y conocimiento territorial.","lectura_breve": "Registra 5.528 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 284 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo.","lectura_breve_final": "Registra 5.528 casos entre 2018 y 2025, con una carga media frente al resto de localidades. La tasa promedio es de 284 por 100.000 habitantes. El índice VIF es bajo y el contexto territorial es bajo."}];
+
+const fmt = new Intl.NumberFormat("es-CO");
+const fmt1 = (x) => Number(x).toLocaleString("es-CO", {maximumFractionDigits:1});
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => [...document.querySelectorAll(sel)];
+
+function valueExtent(data, key) {
+  return [Math.min(...data.map(d => +d[key])), Math.max(...data.map(d => +d[key]))];
+}
+function scale(v, d0, d1, r0, r1) {
+  if (d1 === d0) return (r0 + r1) / 2;
+  return r0 + (v - d0) * (r1 - r0) / (d1 - d0);
+}
+function med(arr) {
+  const a = [...arr].sort((x,y)=>x-y);
+  const m = Math.floor(a.length/2);
+  return a.length % 2 ? a[m] : (a[m-1]+a[m])/2;
+}
+function tooltipHtml(d) {
+  return `<strong>${d.localidad}</strong><br>
+  Casos VIF: ${fmt.format(d.vif_casos_2018_2025)}<br>
+  Tasa VIF: ${fmt1(d.vif_tasa_prom_anual_100k)}<br>
+  Índice VIF: ${fmt1(d.indice_vif_familiar)}<br>
+  Contexto: ${fmt1(d.indice_contexto)}<br>
+  VIF sobre contexto: ${fmt1(d.brecha_vif_contexto)}<br><span style="color:var(--muted)">Negativo = contexto supera VIF</span>`;
+}
+
+function describir(d) {
+  let tipoCarga;
+  if (+d.rank_vif_carga <= 5) tipoCarga = "una carga alta";
+  else if (+d.rank_vif_carga <= 15) tipoCarga = "una carga media";
+  else tipoCarga = "una carga baja";
+
+  const casos = Number(d.vif_casos_2018_2025).toLocaleString("es-CO");
+  const tasa = Number(d.vif_tasa_prom_anual_100k).toLocaleString("es-CO", {maximumFractionDigits: 0});
+  const nivelFam = String(d.nivel_vif_familiar || "").toLowerCase();
+  const nivelCtx = String(d.nivel_contexto || "").toLowerCase();
+
+  let cierre = "";
+  if (d.alerta_lectura && String(d.alerta_lectura).startsWith("Alta")) {
+    cierre = " La tasa debe leerse con cautela porque la población es pequeña.";
+  } else if (d.alerta_lectura && String(d.alerta_lectura).startsWith("Media")) {
+    cierre = " Conviene revisar población flotante y dinámica urbana antes de sacar conclusiones.";
+  }
+
+  return `Registra ${casos} casos entre 2018 y 2025, con ${tipoCarga} frente al resto de localidades. La tasa promedio es de ${tasa} por 100.000 habitantes. El índice VIF es ${nivelFam} y el contexto territorial es ${nivelCtx}.${cierre}`;
+}
+
+function attachTooltip(el, d) {
+  const tip = $("#tooltip");
+  el.addEventListener("mousemove", (ev) => {
+    tip.style.display = "block";
+    tip.style.left = (ev.clientX + 14) + "px";
+    tip.style.top = (ev.clientY + 14) + "px";
+    tip.innerHTML = tooltipHtml(d);
+  });
+  el.addEventListener("mouseleave", () => tip.style.display = "none");
+}
+
+function drawScatter(containerId, xKey, yKey, xLabel, yLabel, mode="default") {
+  const el = document.getElementById(containerId);
+  const w = 760, h = 510, m = {l:70, r:24, t:30, b:70};
+  const xs = valueExtent(DATA, xKey);
+  const ys = valueExtent(DATA, yKey);
+  const padX = (xs[1]-xs[0])*.08 || 1;
+  const padY = (ys[1]-ys[0])*.08 || 1;
+  xs[0]-=padX; xs[1]+=padX; ys[0]-=padY; ys[1]+=padY;
+  const xMed = med(DATA.map(d=>+d[xKey]));
+  const yMed = med(DATA.map(d=>+d[yKey]));
+  const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svg.innerHTML = `
+    <line x1="${m.l}" y1="${h-m.b}" x2="${w-m.r}" y2="${h-m.b}" stroke="rgba(255,255,255,.22)"/>
+    <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="rgba(255,255,255,.22)"/>
+    <line x1="${scale(xMed,xs[0],xs[1],m.l,w-m.r)}" y1="${m.t}" x2="${scale(xMed,xs[0],xs[1],m.l,w-m.r)}" y2="${h-m.b}" stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5"/>
+    <line x1="${m.l}" y1="${scale(yMed,ys[0],ys[1],h-m.b,m.t)}" x2="${w-m.r}" y2="${scale(yMed,ys[0],ys[1],h-m.b,m.t)}" stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5"/>
+    <text x="${w/2}" y="${h-22}" text-anchor="middle" class="axis-label">${xLabel}</text>
+    <text x="18" y="${h/2}" text-anchor="middle" class="axis-label" transform="rotate(-90 18 ${h/2})">${yLabel}</text>
+  `;
+  DATA.forEach(d => {
+    const cx = scale(+d[xKey], xs[0], xs[1], m.l, w-m.r);
+    const cy = scale(+d[yKey], ys[0], ys[1], h-m.b, m.t);
+    let c = "var(--blue)";
+    if (mode === "context") {
+      if (d.nivel_vif_familiar === "alto" && d.nivel_contexto === "alto") c = "var(--pink)";
+      else if (d.nivel_vif_familiar === "alto") c = "var(--yellow)";
+      else if (d.nivel_contexto === "alto") c = "var(--orange)";
+    } else {
+      c = (+d.indice_vif_familiar >= med(DATA.map(x=>+x.indice_vif_familiar)) ? "var(--yellow)" : "var(--blue)");
+    }
+    const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+    g.innerHTML = `<circle cx="${cx}" cy="${cy}" r="7.5" fill="${c}" opacity=".86" stroke="rgba(255,255,255,.55)"/>
+                   <text x="${cx+9}" y="${cy+4}" class="point-label">${d.localidad}</text>`;
+    attachTooltip(g, d);
+    svg.appendChild(g);
+  });
+  el.innerHTML = "";
+  el.appendChild(svg);
+}
+
+function drawBar(containerId, key, label, topN=12) {
+  const el = document.getElementById(containerId);
+  const sorted = [...DATA].sort((a,b)=>a[key]-b[key]).slice(-topN);
+  const w = 760, h = 470, m = {l:150, r:28, t:20, b:42};
+  const maxV = Math.max(...sorted.map(d=>+d[key])) || 1;
+  const rowH = (h-m.t-m.b)/sorted.length;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  sorted.forEach((d,i)=> {
+    const y = m.t + i*rowH + 4;
+    const bw = scale(+d[key], 0, maxV, 0, w-m.l-m.r);
+    const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+    g.innerHTML = `
+      <text x="${m.l-10}" y="${y+rowH*.62}" text-anchor="end" fill="var(--text)" font-size="12">${d.localidad}</text>
+      <rect x="${m.l}" y="${y}" width="${bw}" height="${Math.max(8,rowH-8)}" rx="7" fill="var(--yellow)" opacity=".88"/>
+      <text x="${m.l+bw+8}" y="${y+rowH*.62}" fill="var(--muted)" font-size="12">${fmt1(d[key])}</text>`;
+    attachTooltip(g, d);
+    svg.appendChild(g);
+  });
+  svg.innerHTML += `<text x="${w/2}" y="${h-8}" text-anchor="middle" class="axis-label">${label}</text>`;
+  el.innerHTML = "";
+  el.appendChild(svg);
+}
+
+function renderTopList() {
+  const top = [...DATA].sort((a,b)=>b.indice_vif_familiar-a.indice_vif_familiar).slice(0,7);
+  $("#topIndiceList").innerHTML = top.map((d,i)=>`
+    <div class="locality-row">
+      <div>
+        <strong>${i+1}. ${d.localidad}</strong>
+        <small>${describir(d)}</small>
+      </div>
+      <span class="badge yellow">${fmt1(d.indice_vif_familiar)}</span>
+    </div>
+  `).join("");
+}
+
+function renderSelect() {
+  const sel = $("#localidadSelect");
+  const sorted = [...DATA].sort((a,b)=>a.localidad.localeCompare(b.localidad, "es"));
+  sel.innerHTML = sorted.map(d=>`<option value="${d.localidad}">${d.localidad}</option>`).join("");
+  sel.value = sorted.some(d=>d.localidad==="Bosa") ? "Bosa" : sorted[0].localidad;
+  sel.addEventListener("change", renderFicha);
+  renderFicha();
+}
+
+function badgeForNivel(nivel) {
+  if (nivel === "alto") return "pink";
+  if (nivel === "medio") return "yellow";
+  return "blue";
+}
+
+function renderFicha() {
+  const loc = $("#localidadSelect").value;
+  const d = DATA.find(x=>x.localidad === loc);
+  $("#localidadFicha").innerHTML = `
+    <div class="grid three-col">
+      <div class="metric"><div class="lbl">Casos VIF</div><div class="num">${fmt.format(d.vif_casos_2018_2025)}</div></div>
+      <div class="metric"><div class="lbl">Tasa VIF</div><div class="num">${fmt1(d.vif_tasa_prom_anual_100k)}</div></div>
+      <div class="metric"><div class="lbl">Índice VIF</div><div class="num">${fmt1(d.indice_vif_familiar)}</div></div>
+    </div>
+    <div style="height:14px"></div>
+    <div class="list">
+      <div class="locality-row"><div><strong>Persistencia</strong><small>Años en que la tasa estuvo por encima de la mediana anual de localidades</small></div><span class="badge blue">${d.vif_persistencia_anios} / 8</span></div>
+      <div class="locality-row"><div><strong>Mujeres/NNA</strong><small>Participación en los casos de VIF</small></div><span class="badge green">${fmt1(d.pct_mujeres_nna_vif)}%</span></div>
+      <div class="locality-row"><div><strong>Lectura sugerida</strong><small>${d.tipo_decision}</small></div><span class="badge ${badgeForNivel(d.nivel_vif_familiar)}">${d.nivel_vif_familiar}</span></div>
+      <div class="locality-row"><div><strong>Nota de lectura</strong><small>${d.alerta_lectura}</small></div><span class="badge orange">Dato</span></div>
+    </div>
+  `;
+  $("#localidadNarrativa").innerHTML = `<strong>${d.localidad}</strong><p>${describir(d)}</p><p><b>Qué sugiere:</b> ${d.accion_sugerida}</p>`;
+  renderMiniBars(d);
+}
+
+function renderMiniBars(d) {
+  const items = [
+    ["Índice VIF", d.indice_vif_familiar, "var(--yellow)"],
+    ["Contexto", d.indice_contexto, "var(--pink)"]
+  ];
+  const brecha = Number(d.brecha_vif_contexto);
+  const brechaTexto = brecha >= 0
+    ? `VIF supera al contexto por ${fmt1(brecha)} puntos.`
+    : `El contexto supera al índice VIF por ${fmt1(Math.abs(brecha))} puntos.`;
+
+  $("#miniBars").innerHTML = items.map(([label, val, color]) => `
+    <div style="margin:12px 0">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);font-weight:800">
+        <span>${label}</span><span>${fmt1(val)}</span>
+      </div>
+      <div style="height:10px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:6px">
+        <div style="height:100%;width:${Math.max(4, Math.min(100,val))}%;background:${color};border-radius:99px"></div>
+      </div>
+    </div>
+  `).join("") + `
+    <div class="metric" style="margin-top:14px">
+      <div class="lbl">Brecha VIF-contexto</div>
+      <div class="num">${fmt1(brecha)}</div>
+      <p>${brechaTexto}</p>
+    </div>
+  `;
+}
+
+
+function initTabs() {
+  $$(".tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      $$(".tab").forEach(b=>b.classList.remove("active"));
+      $$(".section").forEach(s=>s.classList.remove("active"));
+      btn.classList.add("active");
+      $("#" + btn.dataset.tab).classList.add("active");
+    });
+  });
+}
+
+function init() {
+  initTabs();
+  renderTopList();
+  renderSelect();
+  drawScatter("scatterCargaTasa", "vif_casos_2018_2025", "vif_tasa_prom_anual_100k", "Casos VIF 2018-2025", "Tasa VIF promedio anual por 100.000 hab.");
+  drawBar("barIndice", "indice_vif_familiar", "Índice VIF");
+  drawScatter("scatterContexto", "indice_vif_familiar", "indice_contexto", "Índice VIF", "Contexto: lesiones y SPA", "context");
+}
+init();
+</script>
+</body>
+</html>
