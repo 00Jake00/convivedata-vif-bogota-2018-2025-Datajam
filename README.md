@@ -16,7 +16,7 @@ Entidad: Secretaría Distrital de Seguridad, Convivencia y Justicia.
 
 ## Pregunta de análisis
 
-¿En qué medida el consumo de SPA del agresor se asocia con la ocurrencia de lesión física dentro de los casos de violencia intrafamiliar notificados en las localidades de Bogotá durante 2018 a 2025, y cómo varía esa asociación entre localidades?
+¿En qué localidades de Bogotá coincide un índice VIF alto con un índice de contexto territorial alto (lesiones personales y consumo abusivo de SPA), y qué patrones de priorización territorial e interinstitucional se derivan de esa coincidencia durante el periodo 2018-2025?
 
 El repositorio también incluye una capa territorial agregada por localidad y año para revisar coincidencias entre VIF, lesiones personales y consumo abusivo de SPA.
 
