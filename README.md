@@ -22,7 +22,7 @@ El análisis es exploratorio y no pretende establecer causalidad.
 
 ## Pregunta de análisis
 
-¿En qué localidades de Bogotá coincide un índice VIF alto con un índice de contexto territorial alto, compuesto por lesiones personales y consumo abusivo de SPA, y qué patrones de priorización territorial e interinstitucional se derivan de esa coincidencia durante el periodo 2018-2025?
+¿En qué localidades de Bogotá coincide un índice VIF alto con un índice de contexto territorial alto (lesiones personales y consumo abusivo de SPA), y qué patrones de priorización territorial e interinstitucional se derivan de esa coincidencia durante el periodo 2018-2025?
 
 El análisis se desarrolla a nivel territorial agregado por localidad y año, con el fin de revisar coincidencias entre violencia intrafamiliar, lesiones personales y consumo abusivo de SPA.
 
